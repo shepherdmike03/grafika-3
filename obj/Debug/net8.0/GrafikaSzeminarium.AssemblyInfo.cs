@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GrafikaSzeminarium")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b6862d1c05deb8442972d2e975e678948db72769")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3022414ef49aeba5859c0c396e2e941069760d1e")]
 [assembly: System.Reflection.AssemblyProductAttribute("GrafikaSzeminarium")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GrafikaSzeminarium")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
