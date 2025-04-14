@@ -3,7 +3,8 @@ using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using Silk.NET.OpenGL.Extensions.ImGui;
 using Silk.NET.Windowing;
-using System.Dynamic;
+using System;
+using System.IO;
 using System.Numerics;
 using System.Reflection;
 using Szeminarium;
@@ -13,38 +14,34 @@ namespace GrafikaSzeminarium
     internal class Program
     {
         private static IWindow graphicWindow;
-
         private static GL Gl;
-
         private static ImGuiController imGuiController;
-
-        // Mostantól a téglalap modell kerül felhasználásra, nem a kocka.
-        private static ModelObjectDescriptor rectangle;
-
+        private static ModelObjectDescriptor glObject;
         private static CameraDescriptor camera = new CameraDescriptor();
-
         private static CubeArrangementModel cubeArrangementModel = new CubeArrangementModel();
+        private static bool UsePerpendicularNormalVectors = true;
 
+        // Shader uniform valtozok nevei
         private const string ModelMatrixVariableName = "uModel";
         private const string NormalMatrixVariableName = "uNormal";
         private const string ViewMatrixVariableName = "uView";
         private const string ProjectionMatrixVariableName = "uProjection";
+        private const string UsePerpendicularNormals = "uUsePerpendicularNormals";
 
         private const string LightColorVariableName = "uLightColor";
         private const string LightPositionVariableName = "uLightPos";
         private const string ViewPositionVariableName = "uViewPos";
-
         private const string ShinenessVariableName = "uShininess";
 
         private static float shininess = 50;
-
         private static uint program;
 
         static void Main(string[] args)
         {
+            // Ablak-beallitasok es letrehozasa
             WindowOptions windowOptions = WindowOptions.Default;
-            windowOptions.Title = "Grafika szeminárium";
-            windowOptions.Size = new Silk.NET.Maths.Vector2D<int>(500, 500);
+            windowOptions.Title = "Lab3_1 dezsa";
+            windowOptions.Size = new Vector2D<int>(500, 500);
 
             graphicWindow = Window.Create(windowOptions);
 
@@ -56,42 +53,38 @@ namespace GrafikaSzeminarium
             graphicWindow.Run();
         }
 
-        private static void GraphicWindow_Closing()
-        {
-            rectangle.Dispose();
-            Gl.DeleteProgram(program);
-        }
-
         private static void GraphicWindow_Load()
         {
+            // Inicializaljuk az OpenGL kontextust
             Gl = graphicWindow.CreateOpenGL();
 
+            // Bemenet es billentyukezeles beallitasa
             var inputContext = graphicWindow.CreateInput();
             foreach (var keyboard in inputContext.Keyboards)
             {
                 keyboard.KeyDown += Keyboard_KeyDown;
             }
 
-            // Handle resizes
-            graphicWindow.FramebufferResize += s =>
+            // Ablak ujrameret eseten valtoztatjuk a viewportot
+            graphicWindow.FramebufferResize += size =>
             {
-                // Adjust the viewport to the new window size
-                Gl.Viewport(s);
+                Gl.Viewport(size);
             };
 
+            // ImGui inicializalasa a grafikus felulethez
             imGuiController = new ImGuiController(Gl, graphicWindow, inputContext);
 
-            // Megoldás az első pontra: egy 1x2-es téglalap létrehozása az X-Y síkban.
-            rectangle = ModelObjectDescriptor.CreateRectangle(Gl);
+            // Objektum inicializalasa: kocka modell letrehozasa
+            glObject = ModelObjectDescriptor.CreateCube(Gl);
 
             Gl.ClearColor(System.Drawing.Color.White);
-            
             Gl.Enable(EnableCap.CullFace);
             Gl.CullFace(TriangleFace.Back);
 
             Gl.Enable(EnableCap.DepthTest);
             Gl.DepthFunc(DepthFunction.Lequal);
 
+            // Vertex es Fragment shaderek betoltese, forditasa es shader program letrehozasa
             uint vshader = Gl.CreateShader(ShaderType.VertexShader);
             uint fshader = Gl.CreateShader(ShaderType.FragmentShader);
 
@@ -99,13 +92,13 @@ namespace GrafikaSzeminarium
             Gl.CompileShader(vshader);
             Gl.GetShader(vshader, ShaderParameterName.CompileStatus, out int vStatus);
             if (vStatus != (int)GLEnum.True)
-                throw new Exception("Vertex shader failed to compile: " + Gl.GetShaderInfoLog(vshader));
+                throw new Exception("Vertex shader forditasa sikertelen: " + Gl.GetShaderInfoLog(vshader));
 
             Gl.ShaderSource(fshader, GetEmbeddedResourceAsString("Shaders.FragmentShader.frag"));
             Gl.CompileShader(fshader);
             Gl.GetShader(fshader, ShaderParameterName.CompileStatus, out int fStatus);
             if (fStatus != (int)GLEnum.True)
-                throw new Exception("Fragment shader failed to compile: " + Gl.GetShaderInfoLog(fshader));
+                throw new Exception("Fragment shader forditasa sikertelen: " + Gl.GetShaderInfoLog(fshader));
 
             program = Gl.CreateProgram();
             Gl.AttachShader(program, vshader);
@@ -116,32 +109,32 @@ namespace GrafikaSzeminarium
             Gl.DetachShader(program, fshader);
             Gl.DeleteShader(vshader);
             Gl.DeleteShader(fshader);
+
             if ((ErrorCode)Gl.GetError() != ErrorCode.NoError)
             {
-                // Handle error if needed
+                // Hibakezeles opcionos
             }
 
             Gl.GetProgram(program, GLEnum.LinkStatus, out var status);
             if (status == 0)
             {
-                Console.WriteLine($"Error linking shader {Gl.GetProgramInfoLog(program)}");
+                Console.WriteLine($"Shader program linkelesi hiba: {Gl.GetProgramInfoLog(program)}");
             }
         }
 
         private static string GetEmbeddedResourceAsString(string resourceRelativePath)
         {
             string resourceFullPath = Assembly.GetExecutingAssembly().GetName().Name + "." + resourceRelativePath;
-
             using (var resStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceFullPath))
             using (var resStreamReader = new StreamReader(resStream))
             {
-                var text = resStreamReader.ReadToEnd();
-                return text;
+                return resStreamReader.ReadToEnd();
             }
         }
 
         private static void Keyboard_KeyDown(IKeyboard keyboard, Key key, int arg3)
         {
+            // Billentyu esemenyek a kamera mozgatasa es az animacio vezerelesere
             switch (key)
             {
                 case Key.Left:
@@ -170,47 +163,37 @@ namespace GrafikaSzeminarium
 
         private static void GraphicWindow_Update(double deltaTime)
         {
-            // NO OpenGL
-            // make it threadsafe
+            // Animacio idobeli elorehaladasa (nem OpenGL hivas!)
             cubeArrangementModel.AdvanceTime(deltaTime);
-
             imGuiController.Update((float)deltaTime);
         }
 
-        private static unsafe void GraphicWindow_Render(double deltaTime)
+        private static void GraphicWindow_Render(double deltaTime)
         {
+            // Kepernyo torlese
             Gl.Clear(ClearBufferMask.ColorBufferBit);
             Gl.Clear(ClearBufferMask.DepthBufferBit);
 
             Gl.UseProgram(program);
 
+            // Vilagitasi parameterek beallitasa
             SetUniform3(LightColorVariableName, new Vector3(1f, 1f, 1f));
             SetUniform3(LightPositionVariableName, new Vector3(0f, 1.2f, 0f));
             SetUniform3(ViewPositionVariableName, new Vector3(camera.Position.X, camera.Position.Y, camera.Position.Z));
             SetUniform1(ShinenessVariableName, shininess);
 
+            // Kamera nezeti es projekcios matrix beallitas
             var viewMatrix = Matrix4X4.CreateLookAt(camera.Position, camera.Target, camera.UpVector);
             SetMatrix(viewMatrix, ViewMatrixVariableName);
 
-            var projectionMatrix = Matrix4X4.CreatePerspectiveFieldOfView<float>((float)(Math.PI / 2), 1024f / 768f, 0.1f, 100f);
+            var projectionMatrix = Matrix4X4.CreatePerspectiveFieldOfView<float>(
+                (float)(Math.PI / 2), 1024f / 768f, 0.1f, 100f);
             SetMatrix(projectionMatrix, ProjectionMatrixVariableName);
 
-            // pelda a transformaciora
-            var modelMatrixCenterRect = Matrix4X4.CreateScale((float)cubeArrangementModel.CenterCubeScale);
-            SetModelMatrix(modelMatrixCenterRect);
-            DrawModelObject(rectangle);
+            // Az objektumok kirajzolasa
+            Draw();
 
-            // ugyan az az elforgatas
-            Matrix4X4<float> diamondScale = Matrix4X4.CreateScale(0.25f);
-            Matrix4X4<float> rotx = Matrix4X4.CreateRotationX((float)Math.PI / 4f);
-            Matrix4X4<float> rotz = Matrix4X4.CreateRotationZ((float)Math.PI / 4f);
-            Matrix4X4<float> roty = Matrix4X4.CreateRotationY((float)cubeArrangementModel.DiamondCubeLocalAngle);
-            Matrix4X4<float> trans = Matrix4X4.CreateTranslation(1f, 1f, 0f);
-            Matrix4X4<float> rotGlobalY = Matrix4X4.CreateRotationY((float)cubeArrangementModel.DiamondCubeGlobalYAngle);
-            Matrix4X4<float> rectModelMatrix = diamondScale * rotx * rotz * roty * trans * rotGlobalY;
-            SetModelMatrix(rectModelMatrix);
-            DrawModelObject(rectangle);
-
+            // ImGui panel a vilagitas parametereinek modositasara
             ImGuiNET.ImGui.Begin("Lighting", ImGuiNET.ImGuiWindowFlags.AlwaysAutoResize | ImGuiNET.ImGuiWindowFlags.NoCollapse);
             ImGuiNET.ImGui.SliderFloat("Shininess", ref shininess, 5, 100);
             ImGuiNET.ImGui.End();
@@ -218,27 +201,78 @@ namespace GrafikaSzeminarium
             imGuiController.Render();
         }
 
+        private static void Draw()
+        {
+            // Parameter a kor alaku elrendezeshez
+            float radius = 2.3f;
+            float rotationAngle = MathF.PI / 9.0f;
+            int numRectangles = 18;
+
+            float shiftX = 0;
+            float shiftY, shiftZ = radius;
+
+            // Elso csoport: meroleges normalokkal
+            UsePerpendicularNormalVectors = true;
+            setUsePerpendicularNormals();
+            shiftY = 2.0f;
+            drawRectangles(radius, rotationAngle, numRectangles, shiftX, shiftY, shiftZ);
+
+            // Masodik csoport: modositott (nem meroleges) normalokkal
+            UsePerpendicularNormalVectors = false;
+            setUsePerpendicularNormals();
+            shiftY = -2.0f;
+            drawRectangles(radius, rotationAngle, numRectangles, shiftX, shiftY, shiftZ);
+        }
+
+        private static void drawRectangles(float radius, float rotationAngle, int numRectangles, float shiftX, float shiftY, float shiftZ)
+        {
+            float x = 0.0f, z = 0.0f;
+
+            // Az egyes objektumok kirajzolasa ciklikusan a kor menten
+            for (int i = 0; i < numRectangles; i++)
+            {
+                float angle = i * rotationAngle;
+                x = radius * (float)Math.Cos(angle) + shiftX;
+                z = radius * (float)Math.Sin(angle) + shiftZ;
+
+                // Modell transzformacio: skala, translacio, forgatas es eltolas a kozepontol
+                var centerCubeScale = Matrix4X4.CreateScale((float)cubeArrangementModel.CenterCubeScale);
+                var translationCube = Matrix4X4.CreateTranslation(x, shiftY, z);
+                var rotationCube = Matrix4X4.CreateRotationY(angle);
+                var shiftBackCenter = Matrix4X4.CreateTranslation(-radius, 0.0f, 0.0f);
+
+                var modelMatrixForCube = centerCubeScale * translationCube * rotationCube * shiftBackCenter;
+                SetModelMatrix(modelMatrixForCube);
+                DrawModelObject(glObject);
+            }
+        }
+
         private static unsafe void SetModelMatrix(Matrix4X4<float> modelMatrix)
         {
+            // Beallitjuk az objektum modell matrixat a shaderben
             SetMatrix(modelMatrix, ModelMatrixVariableName);
 
-            // set also the normal matrix
+            // Normal matrix kiszamolasa: (M^-1)^T (a translacio nelkul)
             int location = Gl.GetUniformLocation(program, NormalMatrixVariableName);
             if (location == -1)
             {
-                throw new Exception($"{NormalMatrixVariableName} uniform not found on shader.");
+                throw new Exception($"{NormalMatrixVariableName} uniform nem talalhato a shaderben.");
             }
 
-            // G = (M^-1)^T
-            var modelMatrixWithoutTranslation = new Matrix4X4<float>(modelMatrix.Row1, modelMatrix.Row2, modelMatrix.Row3, modelMatrix.Row4);
-            modelMatrixWithoutTranslation.M41 = 0;
-            modelMatrixWithoutTranslation.M42 = 0;
-            modelMatrixWithoutTranslation.M43 = 0;
-            modelMatrixWithoutTranslation.M44 = 1;
+            var modelMatrixWithoutTranslation = new Matrix4X4<float>(modelMatrix.Row1, modelMatrix.Row2, modelMatrix.Row3, modelMatrix.Row4)
+            {
+                M41 = 0,
+                M42 = 0,
+                M43 = 0,
+                M44 = 1
+            };
 
-            Matrix4X4<float> modelInvers;
-            Matrix4X4.Invert<float>(modelMatrixWithoutTranslation, out modelInvers);
-            Matrix3X3<float> normalMatrix = new Matrix3X3<float>(Matrix4X4.Transpose(modelInvers));
+            Matrix4X4<float> modelInverse;
+            if (!Matrix4X4.Invert(modelMatrixWithoutTranslation, out modelInverse))
+            {
+                throw new Exception("A modell matrix inverzet nem sikerult kiszamolni.");
+            }
+            Matrix3X3<float> normalMatrix = new Matrix3X3<float>(Matrix4X4.Transpose(modelInverse));
 
             Gl.UniformMatrix3(location, 1, false, (float*)&normalMatrix);
             CheckError();
@@ -249,9 +283,8 @@ namespace GrafikaSzeminarium
             int location = Gl.GetUniformLocation(program, uniformName);
             if (location == -1)
             {
-                throw new Exception($"{uniformName} uniform not found on shader.");
+                throw new Exception($"{uniformName} uniform nem talalhato a shaderben.");
             }
-
             Gl.Uniform1(location, uniformValue);
             CheckError();
         }
@@ -261,15 +294,27 @@ namespace GrafikaSzeminarium
             int location = Gl.GetUniformLocation(program, uniformName);
             if (location == -1)
             {
-                throw new Exception($"{uniformName} uniform not found on shader.");
+                throw new Exception($"{uniformName} uniform nem talalhato a shaderben.");
             }
-
             Gl.Uniform3(location, uniformValue);
+            CheckError();
+        }
+
+        private static unsafe void setUsePerpendicularNormals()
+        {
+            // Allitsuk be a shader valtozat, hogy meroleges normalokat hasznaljon-e
+            int location = Gl.GetUniformLocation(program, UsePerpendicularNormals);
+            if (location == -1)
+            {
+                throw new Exception($"{UsePerpendicularNormals} uniform nem talalhato a shaderben.");
+            }
+            Gl.Uniform1(location, UsePerpendicularNormalVectors ? 1 : 0);
             CheckError();
         }
 
         private static unsafe void DrawModelObject(ModelObjectDescriptor modelObject)
         {
+            // Az objektum kirajzolasa az index buffer es VAO alapu alapjan
             Gl.BindVertexArray(modelObject.Vao);
             Gl.BindBuffer(GLEnum.ElementArrayBuffer, modelObject.Indices);
             Gl.DrawElements(PrimitiveType.Triangles, modelObject.IndexArrayLength, DrawElementsType.UnsignedInt, null);
@@ -277,15 +322,14 @@ namespace GrafikaSzeminarium
             Gl.BindVertexArray(0);
         }
 
-        private static unsafe void SetMatrix(Matrix4X4<float> mx, string uniformName)
+        private static unsafe void SetMatrix(Matrix4X4<float> matrix, string uniformName)
         {
             int location = Gl.GetUniformLocation(program, uniformName);
             if (location == -1)
             {
-                throw new Exception($"{uniformName} uniform not found on shader.");
+                throw new Exception($"{uniformName} uniform nem talalhato a shaderben.");
             }
-
-            Gl.UniformMatrix4(location, 1, false, (float*)&mx);
+            Gl.UniformMatrix4(location, 1, false, (float*)&matrix);
             CheckError();
         }
 
@@ -293,7 +337,16 @@ namespace GrafikaSzeminarium
         {
             var error = (ErrorCode)Gl.GetError();
             if (error != ErrorCode.NoError)
-                throw new Exception("GL.GetError() returned " + error.ToString());
+            {
+                throw new Exception("GL.GetError() hibakod: " + error.ToString());
+            }
+        }
+
+        private static void GraphicWindow_Closing()
+        {
+            // Eroforrasok felszabaditasa az ablak bezaraskor
+            glObject.Dispose();
+            Gl.DeleteProgram(program);
         }
     }
 }
