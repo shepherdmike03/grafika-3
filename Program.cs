@@ -53,74 +53,80 @@ namespace GrafikaSzeminarium
             graphicWindow.Run();
         }
 
-        private static void GraphicWindow_Load()
-        {
-            // Inicializaljuk az OpenGL kontextust
-            Gl = graphicWindow.CreateOpenGL();
+private static void GraphicWindow_Load()
+{
+    // Initialize the OpenGL context.
+    Gl = graphicWindow.CreateOpenGL();
 
-            // Bemenet es billentyukezeles beallitasa
-            var inputContext = graphicWindow.CreateInput();
-            foreach (var keyboard in inputContext.Keyboards)
-            {
-                keyboard.KeyDown += Keyboard_KeyDown;
-            }
+    // Pull the starting camera position back by increasing the distance.
+    for (int i = 0; i < 10; i++)
+    {
+        camera.IncreaseDistance();
+    }
 
-            // Ablak ujrameret eseten valtoztatjuk a viewportot
-            graphicWindow.FramebufferResize += size =>
-            {
-                Gl.Viewport(size);
-            };
+    // Set up input and keyboard handling.
+    var inputContext = graphicWindow.CreateInput();
+    foreach (var keyboard in inputContext.Keyboards)
+    {
+        keyboard.KeyDown += Keyboard_KeyDown;
+    }
 
-            // ImGui inicializalasa a grafikus felulethez
-            imGuiController = new ImGuiController(Gl, graphicWindow, inputContext);
+    // Update the viewport when the window is resized.
+    graphicWindow.FramebufferResize += size =>
+    {
+        Gl.Viewport(size);
+    };
 
-            // Objektum inicializalasa: kocka modell letrehozasa
-            glObject = ModelObjectDescriptor.CreateCube(Gl);
+    // Initialize ImGui for the UI.
+    imGuiController = new ImGuiController(Gl, graphicWindow, inputContext);
 
-            Gl.ClearColor(System.Drawing.Color.White);
-            Gl.Enable(EnableCap.CullFace);
-            Gl.CullFace(TriangleFace.Back);
+    // Initialize the cube model object.
+    glObject = ModelObjectDescriptor.CreateCube(Gl);
 
-            Gl.Enable(EnableCap.DepthTest);
-            Gl.DepthFunc(DepthFunction.Lequal);
+    Gl.ClearColor(System.Drawing.Color.White);
+    Gl.Enable(EnableCap.CullFace);
+    Gl.CullFace(TriangleFace.Back);
 
-            // Vertex es Fragment shaderek betoltese, forditasa es shader program letrehozasa
-            uint vshader = Gl.CreateShader(ShaderType.VertexShader);
-            uint fshader = Gl.CreateShader(ShaderType.FragmentShader);
+    Gl.Enable(EnableCap.DepthTest);
+    Gl.DepthFunc(DepthFunction.Lequal);
 
-            Gl.ShaderSource(vshader, GetEmbeddedResourceAsString("Shaders.VertexShader.vert"));
-            Gl.CompileShader(vshader);
-            Gl.GetShader(vshader, ShaderParameterName.CompileStatus, out int vStatus);
-            if (vStatus != (int)GLEnum.True)
-                throw new Exception("Vertex shader forditasa sikertelen: " + Gl.GetShaderInfoLog(vshader));
+    // Load, compile, and link the vertex and fragment shaders.
+    uint vshader = Gl.CreateShader(ShaderType.VertexShader);
+    uint fshader = Gl.CreateShader(ShaderType.FragmentShader);
 
-            Gl.ShaderSource(fshader, GetEmbeddedResourceAsString("Shaders.FragmentShader.frag"));
-            Gl.CompileShader(fshader);
-            Gl.GetShader(fshader, ShaderParameterName.CompileStatus, out int fStatus);
-            if (fStatus != (int)GLEnum.True)
-                throw new Exception("Fragment shader forditasa sikertelen: " + Gl.GetShaderInfoLog(fshader));
+    Gl.ShaderSource(vshader, GetEmbeddedResourceAsString("Shaders.VertexShader.vert"));
+    Gl.CompileShader(vshader);
+    Gl.GetShader(vshader, ShaderParameterName.CompileStatus, out int vStatus);
+    if (vStatus != (int)GLEnum.True)
+        throw new Exception("Vertex shader compilation failed: " + Gl.GetShaderInfoLog(vshader));
 
-            program = Gl.CreateProgram();
-            Gl.AttachShader(program, vshader);
-            Gl.AttachShader(program, fshader);
-            Gl.LinkProgram(program);
+    Gl.ShaderSource(fshader, GetEmbeddedResourceAsString("Shaders.FragmentShader.frag"));
+    Gl.CompileShader(fshader);
+    Gl.GetShader(fshader, ShaderParameterName.CompileStatus, out int fStatus);
+    if (fStatus != (int)GLEnum.True)
+        throw new Exception("Fragment shader compilation failed: " + Gl.GetShaderInfoLog(fshader));
 
-            Gl.DetachShader(program, vshader);
-            Gl.DetachShader(program, fshader);
-            Gl.DeleteShader(vshader);
-            Gl.DeleteShader(fshader);
+    program = Gl.CreateProgram();
+    Gl.AttachShader(program, vshader);
+    Gl.AttachShader(program, fshader);
+    Gl.LinkProgram(program);
 
-            if ((ErrorCode)Gl.GetError() != ErrorCode.NoError)
-            {
-                // Hibakezeles opcionos
-            }
+    Gl.DetachShader(program, vshader);
+    Gl.DetachShader(program, fshader);
+    Gl.DeleteShader(vshader);
+    Gl.DeleteShader(fshader);
 
-            Gl.GetProgram(program, GLEnum.LinkStatus, out var status);
-            if (status == 0)
-            {
-                Console.WriteLine($"Shader program linkelesi hiba: {Gl.GetProgramInfoLog(program)}");
-            }
-        }
+    if ((ErrorCode)Gl.GetError() != ErrorCode.NoError)
+    {
+        // Optional error handling.
+    }
+
+    Gl.GetProgram(program, GLEnum.LinkStatus, out var status);
+    if (status == 0)
+    {
+        Console.WriteLine($"Shader program linking error: {Gl.GetProgramInfoLog(program)}");
+    }
+}
 
         private static string GetEmbeddedResourceAsString(string resourceRelativePath)
         {
