@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Szeminarium
 {
@@ -42,12 +38,11 @@ namespace Szeminarium
             // set a simulation time
             Time += deltaTime;
 
-            // lets produce an oscillating scale in time
+            // produce an oscillating scale in time
             CenterCubeScale = 1 + 0.2 * Math.Sin(1.5 * Time);
 
             // the rotation angle is time x angular velocity;
             DiamondCubeLocalAngle = Time * 10;
-
             DiamondCubeGlobalYAngle = -Time;
         }
     }

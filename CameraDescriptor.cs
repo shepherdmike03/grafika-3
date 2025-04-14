@@ -1,5 +1,5 @@
-﻿
-using Silk.NET.Maths;
+﻿using Silk.NET.Maths;
+using System;
 
 namespace Szeminarium
 {
@@ -62,7 +62,6 @@ namespace Szeminarium
         public void IncreaseZYAngle()
         {
             AngleToZYPlane += AngleChangeStepSize;
-
         }
 
         public void DecreaseZYAngle()

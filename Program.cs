@@ -18,7 +18,8 @@ namespace GrafikaSzeminarium
 
         private static ImGuiController imGuiController;
 
-        private static ModelObjectDescriptor cube;
+        // Mostantól a téglalap modell kerül felhasználásra, nem a kocka.
+        private static ModelObjectDescriptor rectangle;
 
         private static CameraDescriptor camera = new CameraDescriptor();
 
@@ -57,7 +58,7 @@ namespace GrafikaSzeminarium
 
         private static void GraphicWindow_Closing()
         {
-            cube.Dispose();
+            rectangle.Dispose();
             Gl.DeleteProgram(program);
         }
 
@@ -78,11 +79,10 @@ namespace GrafikaSzeminarium
                 Gl.Viewport(s);
             };
 
-
-
             imGuiController = new ImGuiController(Gl, graphicWindow, inputContext);
 
-            cube = ModelObjectDescriptor.CreateCube(Gl);
+            // Megoldás az első pontra: egy 1x2-es téglalap létrehozása az X-Y síkban.
+            rectangle = ModelObjectDescriptor.CreateRectangle(Gl);
 
             Gl.ClearColor(System.Drawing.Color.White);
             
@@ -91,7 +91,6 @@ namespace GrafikaSzeminarium
 
             Gl.Enable(EnableCap.DepthTest);
             Gl.DepthFunc(DepthFunction.Lequal);
-
 
             uint vshader = Gl.CreateShader(ShaderType.VertexShader);
             uint fshader = Gl.CreateShader(ShaderType.FragmentShader);
@@ -119,7 +118,7 @@ namespace GrafikaSzeminarium
             Gl.DeleteShader(fshader);
             if ((ErrorCode)Gl.GetError() != ErrorCode.NoError)
             {
-
+                // Handle error if needed
             }
 
             Gl.GetProgram(program, GLEnum.LinkStatus, out var status);
@@ -196,22 +195,22 @@ namespace GrafikaSzeminarium
             var projectionMatrix = Matrix4X4.CreatePerspectiveFieldOfView<float>((float)(Math.PI / 2), 1024f / 768f, 0.1f, 100f);
             SetMatrix(projectionMatrix, ProjectionMatrixVariableName);
 
+            // pelda a transformaciora
+            var modelMatrixCenterRect = Matrix4X4.CreateScale((float)cubeArrangementModel.CenterCubeScale);
+            SetModelMatrix(modelMatrixCenterRect);
+            DrawModelObject(rectangle);
 
-            var modelMatrixCenterCube = Matrix4X4.CreateScale((float)cubeArrangementModel.CenterCubeScale);
-            SetModelMatrix(modelMatrixCenterCube);
-            DrawModelObject(cube);
-
+            // ugyan az az elforgatas
             Matrix4X4<float> diamondScale = Matrix4X4.CreateScale(0.25f);
             Matrix4X4<float> rotx = Matrix4X4.CreateRotationX((float)Math.PI / 4f);
             Matrix4X4<float> rotz = Matrix4X4.CreateRotationZ((float)Math.PI / 4f);
             Matrix4X4<float> roty = Matrix4X4.CreateRotationY((float)cubeArrangementModel.DiamondCubeLocalAngle);
             Matrix4X4<float> trans = Matrix4X4.CreateTranslation(1f, 1f, 0f);
             Matrix4X4<float> rotGlobalY = Matrix4X4.CreateRotationY((float)cubeArrangementModel.DiamondCubeGlobalYAngle);
-            Matrix4X4<float> dimondCubeModelMatrix = diamondScale * rotx * rotz * roty * trans * rotGlobalY;
-            SetModelMatrix(dimondCubeModelMatrix);
-            DrawModelObject(cube);
+            Matrix4X4<float> rectModelMatrix = diamondScale * rotx * rotz * roty * trans * rotGlobalY;
+            SetModelMatrix(rectModelMatrix);
+            DrawModelObject(rectangle);
 
-            //ImGuiNET.ImGui.ShowDemoWindow();
             ImGuiNET.ImGui.Begin("Lighting", ImGuiNET.ImGuiWindowFlags.AlwaysAutoResize | ImGuiNET.ImGuiWindowFlags.NoCollapse);
             ImGuiNET.ImGui.SliderFloat("Shininess", ref shininess, 5, 100);
             ImGuiNET.ImGui.End();

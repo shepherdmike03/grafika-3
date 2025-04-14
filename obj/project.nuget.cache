@@ -1,0 +1,57 @@
+{
+  "version": 2,
+  "dgSpecHash": "Fa8k/GJqz8I=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\paszt\\Desktop\\Files\\BACKUP FOLDER\\Házik\\2 ev\\secondSemester\\grafika\\grafika-3\\grafika-3\\GrafikaSzeminarium.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\paszt\\.nuget\\packages\\imgui.net\\1.90.8.1\\imgui.net.1.90.8.1.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\microsoft.csharp\\4.7.0\\microsoft.csharp.4.7.0.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\microsoft.dotnet.platformabstractions\\3.1.6\\microsoft.dotnet.platformabstractions.3.1.6.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\microsoft.extensions.dependencymodel\\8.0.0\\microsoft.extensions.dependencymodel.8.0.0.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\silk.net\\2.22.0\\silk.net.2.22.0.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\silk.net.core\\2.22.0\\silk.net.core.2.22.0.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\silk.net.glfw\\2.22.0\\silk.net.glfw.2.22.0.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\silk.net.input\\2.22.0\\silk.net.input.2.22.0.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\silk.net.input.common\\2.22.0\\silk.net.input.common.2.22.0.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\silk.net.input.extensions\\2.22.0\\silk.net.input.extensions.2.22.0.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\silk.net.input.glfw\\2.22.0\\silk.net.input.glfw.2.22.0.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\silk.net.maths\\2.22.0\\silk.net.maths.2.22.0.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\silk.net.openal\\2.22.0\\silk.net.openal.2.22.0.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\silk.net.opengl\\2.22.0\\silk.net.opengl.2.22.0.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\silk.net.opengl.extensions.imgui\\2.22.0\\silk.net.opengl.extensions.imgui.2.22.0.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\silk.net.vulkan\\2.22.0\\silk.net.vulkan.2.22.0.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\silk.net.vulkan.extensions.khr\\2.22.0\\silk.net.vulkan.extensions.khr.2.22.0.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\silk.net.windowing\\2.22.0\\silk.net.windowing.2.22.0.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\silk.net.windowing.common\\2.22.0\\silk.net.windowing.common.2.22.0.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\silk.net.windowing.glfw\\2.22.0\\silk.net.windowing.glfw.2.22.0.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\system.buffers\\4.5.1\\system.buffers.4.5.1.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\system.memory\\4.5.5\\system.memory.4.5.5.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\system.numerics.vectors\\4.5.0\\system.numerics.vectors.4.5.0.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\6.0.0\\system.runtime.compilerservices.unsafe.6.0.0.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\system.text.encodings.web\\8.0.0\\system.text.encodings.web.8.0.0.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\system.text.json\\8.0.0\\system.text.json.8.0.0.nupkg.sha512",
+    "C:\\Users\\paszt\\.nuget\\packages\\ultz.native.glfw\\3.4.0\\ultz.native.glfw.3.4.0.nupkg.sha512"
+  ],
+  "logs": [
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'System.Text.Json' 8.0.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-8g4q-xg66-9fp4",
+      "libraryId": "System.Text.Json",
+      "targetGraphs": [
+        "net8.0"
+      ]
+    },
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'System.Text.Json' 8.0.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-hh2w-p6rv-4g7w",
+      "libraryId": "System.Text.Json",
+      "targetGraphs": [
+        "net8.0"
+      ]
+    }
+  ]
+}
